@@ -103,7 +103,8 @@ import requests
 app = FastAPI()
 
 getenv = dotenv_values(".env")
-weather_api = getenv.get('weather_api')
+# weather_api = getenv.get('weather_api')
+weather_api = "1236669c1abf975e5b7339f2629851d8"
 
 app.add_middleware(
     CORSMiddleware,
