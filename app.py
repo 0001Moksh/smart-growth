@@ -210,15 +210,28 @@ def predict_water_fertilizer(crop: str, land:float ,latitude: float,  longitude:
     try:
         response = requests.get(blynk_url)
         soil_moisture = float(response.text)
+        DRY_VALUE = 1023  # Example value (fully dry)
+        WET_VALUE = 300   # Example value (fully wet)
+
+        # Simulating response from sensor
+        response_text =soil_moisture  # Example ADC value received as string
+        soil_moisture = float(response_text)
+
+        # Convert ADC value to percentage
+        moisture_percentage = (1 - (soil_moisture - WET_VALUE) / (DRY_VALUE - WET_VALUE)) * 100
+        soil_moisture_percentage = max(0, min(100, moisture_percentage))  # Ensure value stays in 0-100%
+
     except Exception as e:
         return {"error": "Failed to fetch soil_moisture", "details": str(e)}
     
-    blynk_url = "https://blynk.cloud/external/api/get?token=NIkHnxrx2UMZaMcFF1NS38yvfH4W3INr&V2"
-    try:
-        response = requests.get(blynk_url)
-        rainfall_mm = float(response.text)
-    except Exception as e:
-        return {"error": "Failed to fetch rainfall_mm", "details": str(e)}
+    # blynk_url = "https://blynk.cloud/external/api/get?token=NIkHnxrx2UMZaMcFF1NS38yvfH4W3INr&V2"
+    # try:
+    #     response = requests.get(blynk_url)
+    #     rainfall_mm = float(response.text)
+    # except Exception as e:
+    #     return {"error": "Failed to fetch rainfall_mm", "details": str(e)}
+        # rain_sum
+    rainfall_mm = weather_data.get("daily", {}).get("rain_sum", [None])[0]
 
     nitrogen = np.random.randint(20, 80)
     phosphorus = np.random.randint(15, 50)
@@ -232,9 +245,8 @@ def predict_water_fertilizer(crop: str, land:float ,latitude: float,  longitude:
         crop_idx = list(encoder.categories_[0]).index(crop)  # Fixed indexing
         crop_encoded[crop_idx] = 1 
 
- # Model Predictions
+    # Model Predictions
     water_required_per_m2 = water_model.predict([[soil_moisture, rainfall_mm] + list(crop_encoded)])[0]
-    total_water_required = water_required_per_m2 * land * 10_000  # Convert to total liters for given hectares
 
     fertilizer_needed_per_hectare = fertilizer_model.predict([[nitrogen, phosphorus, potassium, uv_index]])[0]
     total_fertilizer_needed = fertilizer_needed_per_hectare * land  # Already in kg per hectare
@@ -244,7 +256,7 @@ def predict_water_fertilizer(crop: str, land:float ,latitude: float,  longitude:
         "Estimated Water Requirement (liters/m2)": round(water_required_per_m2, 2),
         "Estimated Fertilizer Needed (kg)": round(total_fertilizer_needed, 2),
         "crop": crop,
-        "soil_moisture": soil_moisture,  
+        "soil_moisture_percentage": soil_moisture_percentage,  
         "rainfall_mm": rainfall_mm,  
         "nitrogen": nitrogen, 
         "phosphorus": phosphorus, 
@@ -252,3 +264,16 @@ def predict_water_fertilizer(crop: str, land:float ,latitude: float,  longitude:
         "uv_index": uv_index,
         "weather_data": weather_data,
     }
+
+
+@app.get("/weather")
+def weather(latitude: float,  longitude: float):
+    url = f"https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&daily=temperature_2m_max,temperature_2m_min,uv_index_max,sunshine_duration,daylight_duration,sunset,sunrise,uv_index_clear_sky_max,rain_sum,showers_sum,snowfall_sum,precipitation_sum,precipitation_hours,precipitation_probability_max,apparent_temperature_min,apparent_temperature_max,weather_code,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,shortwave_radiation_sum,et0_fao_evapotranspiration&current=apparent_temperature,temperature_2m,relative_humidity_2m,is_day,wind_speed_10m,wind_direction_10m,wind_gusts_10m,precipitation,showers,snowfall,rain,weather_code,cloud_cover,pressure_msl,surface_pressure"
+    cache_session = requests_cache.CachedSession('.cache', expire_after=3600)
+    retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
+    response = retry_session.get(url)
+    weather_data = response.json()
+    temperature_2m = weather_data.get("current", {}).get("temperature_2m", 0)
+
+    
+    return {"temperature": temperature_2m,}
