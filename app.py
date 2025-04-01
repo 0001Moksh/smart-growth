@@ -161,17 +161,13 @@
 
 
 
-
-
-import pandas as pd
 import numpy as np
-import openmeteo_requests
 import requests_cache
 from retry_requests import retry
 import joblib
 import requests
 import io
-from fastapi import FastAPI, Query
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
@@ -201,7 +197,7 @@ fertilizer_model = joblib.load("models/fertilizer_req_model.pkl")
 encoder = joblib.load("models/crop_encoder.pkl")
 
 @app.get("/predict")
-def predict_water_fertilizer(crop: str, latitude: float, longitude: float):
+def predict_water_fertilizer(crop: str, land:float ,latitude: float,  longitude: float):
     cache_session = requests_cache.CachedSession('.cache', expire_after=3600)
     retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
 
@@ -224,13 +220,17 @@ def predict_water_fertilizer(crop: str, latitude: float, longitude: float):
         crop_idx = list(encoder.categories_[0]).index(crop)  # Fixed indexing
         crop_encoded[crop_idx] = 1 
 
-    # Model Predictions
-    water_required = water_model.predict([[soil_moisture, rainfall_mm] + list(crop_encoded)])[0]
-    fertilizer_needed = fertilizer_model.predict([[nitrogen, phosphorus, potassium, uv_index]])[0]
+ # Model Predictions
+    water_required_per_m2 = water_model.predict([[soil_moisture, rainfall_mm] + list(crop_encoded)])[0]
+    total_water_required = water_required_per_m2 * land * 10_000  # Convert to total liters for given hectares
+
+    fertilizer_needed_per_hectare = fertilizer_model.predict([[nitrogen, phosphorus, potassium, uv_index]])[0]
+    total_fertilizer_needed = fertilizer_needed_per_hectare * land  # Already in kg per hectare
+
 
     return {
-        "Estimated Water Requirement (liters per meter-square)": round(water_required, 2),
-        "Estimated Fertilizer Needed (kg/ha)": round(fertilizer_needed, 2),
+        "Estimated Water Requirement (liters)": round(total_water_required, 2),
+        "Estimated Fertilizer Needed (kg)": round(total_fertilizer_needed, 2),
         "soil_moisture": soil_moisture,  
         "crop": crop,
         "rainfall_mm": rainfall_mm,  
