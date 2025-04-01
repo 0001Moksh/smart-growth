@@ -55,21 +55,21 @@
 #     response = retry_session.get(url)
 #     weather_data = response.json()    
 
-#     # # Validate input parameters soil_moisture
-#     # blynk_url = "https://blynk.cloud/external/api/get?token=NIkHnxrx2UMZaMcFF1NS38yvfH4W3INr&V1"
-#     # try:
-#     #     response = requests.get(blynk_url)
-#     #     soil_moisture = float(response.text)
-#     # except Exception as e:
-#     #     return {"error": "Failed to fetch soil_moisture", "details": str(e)}
+    # # Validate input parameters soil_moisture
+    # blynk_url = "https://blynk.cloud/external/api/get?token=NIkHnxrx2UMZaMcFF1NS38yvfH4W3INr&V1"
+    # try:
+    #     response = requests.get(blynk_url)
+    #     soil_moisture = float(response.text)
+    # except Exception as e:
+    #     return {"error": "Failed to fetch soil_moisture", "details": str(e)}
     
 #     # # Validate input parameters rainfall_mm
-#     # blynk_url = "https://blynk.cloud/external/api/get?token=NIkHnxrx2UMZaMcFF1NS38yvfH4W3INr&V2"
-#     # try:
-#     #     response = requests.get(blynk_url)
-#     #     rainfall_mm = float(response.text)
-#     # except Exception as e:
-#     #     return {"error": "Failed to fetch rainfall_mm", "details": str(e)}
+    # blynk_url = "https://blynk.cloud/external/api/get?token=NIkHnxrx2UMZaMcFF1NS38yvfH4W3INr&V2"
+    # try:
+    #     response = requests.get(blynk_url)
+    #     rainfall_mm = float(response.text)
+    # except Exception as e:
+    #     return {"error": "Failed to fetch rainfall_mm", "details": str(e)}
     
 #     # # Validate input parameters nitrogen
 #     # blynk_url = "https://blynk.cloud/external/api/get?token=NIkHnxrx2UMZaMcFF1NS38yvfH4W3INr&V3"
@@ -206,12 +206,24 @@ def predict_water_fertilizer(crop: str, land:float ,latitude: float,  longitude:
     weather_data = response.json() 
 
     # Static input parameters (these should ideally be fetched dynamically)
-    soil_moisture = 0.5
-    rainfall_mm = 0.5
-    nitrogen = 0.5
-    phosphorus = 0.5
-    potassium = 0.5
-    # uv_index = weather_data["daily"]["uv_index_max"][0]
+    blynk_url = "https://blynk.cloud/external/api/get?token=NIkHnxrx2UMZaMcFF1NS38yvfH4W3INr&V3"
+    try:
+        response = requests.get(blynk_url)
+        soil_moisture = float(response.text)
+    except Exception as e:
+        return {"error": "Failed to fetch soil_moisture", "details": str(e)}
+    
+    blynk_url = "https://blynk.cloud/external/api/get?token=NIkHnxrx2UMZaMcFF1NS38yvfH4W3INr&V2"
+    try:
+        response = requests.get(blynk_url)
+        rainfall_mm = float(response.text)
+    except Exception as e:
+        return {"error": "Failed to fetch rainfall_mm", "details": str(e)}
+
+    nitrogen = np.random.randint(20, 80)
+    phosphorus = np.random.randint(15, 50)
+    potassium = np.random.randint(20, 60)
+    
     uv_index = weather_data.get("daily", {}).get("uv_index_max", [0])[0]
 
     # One-hot encode the crop
@@ -231,8 +243,8 @@ def predict_water_fertilizer(crop: str, land:float ,latitude: float,  longitude:
     return {
         "Estimated Water Requirement (liters/m2)": round(water_required_per_m2, 2),
         "Estimated Fertilizer Needed (kg)": round(total_fertilizer_needed, 2),
-        "soil_moisture": soil_moisture,  
         "crop": crop,
+        "soil_moisture": soil_moisture,  
         "rainfall_mm": rainfall_mm,  
         "nitrogen": nitrogen, 
         "phosphorus": phosphorus, 
