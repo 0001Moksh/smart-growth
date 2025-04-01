@@ -229,7 +229,7 @@ def predict_water_fertilizer(crop: str, land:float ,latitude: float,  longitude:
 
 
     return {
-        "Estimated Water Requirement (liters)": round(total_water_required, 2),
+        "Estimated Water Requirement (liters/m2)": round(water_required_per_m2, 2),
         "Estimated Fertilizer Needed (kg)": round(total_fertilizer_needed, 2),
         "soil_moisture": soil_moisture,  
         "crop": crop,
