@@ -236,7 +236,7 @@ def predict_water_fertilizer(crop: str, land:float ,latitude: float,  longitude:
     # nitrogen = np.random.randint(20, 80)
     # phosphorus = np.random.randint(15, 50)
     # potassium = np.random.randint(20, 60)
-    nitrogen = 40.3
+    nitrogen =80.3
     phosphorus = 30.2
     potassium = 40.2
     
