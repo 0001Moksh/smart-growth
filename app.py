@@ -233,9 +233,12 @@ def predict_water_fertilizer(crop: str, land:float ,latitude: float,  longitude:
         # rain_sum
     rainfall_mm = weather_data.get("daily", {}).get("rain_sum", [None])[0]
 
-    nitrogen = np.random.randint(20, 80)
-    phosphorus = np.random.randint(15, 50)
-    potassium = np.random.randint(20, 60)
+    # nitrogen = np.random.randint(20, 80)
+    # phosphorus = np.random.randint(15, 50)
+    # potassium = np.random.randint(20, 60)
+    nitrogen = 40.3
+    phosphorus = 30.2
+    potassium = 40.2
     
     uv_index = weather_data.get("daily", {}).get("uv_index_max", [0])[0]
 
